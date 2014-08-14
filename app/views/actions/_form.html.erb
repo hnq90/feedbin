@@ -1,0 +1,33 @@
+<%= form_for(@action) do |f| %>
+  <% if @action.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@action.errors.count, "error") %> prohibited this high_score from being saved:</h2>
+      <ul>
+      <% @high_score.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <h3 class="no-border">If&hellip;</h3>
+
+  <ul class="pill-list padded">
+    <li>
+      <label class="checkbox">
+        <%= f.check_box :star %>
+        <strong>I Star an Article</strong>
+      </label>
+    </li>
+    <li>
+
+      <p><strong>Article Matches Search</strong></p>
+      <div class="filter-search" data-behavior="autocomplete_parent">
+        <%= f.search_field :query, placeholder: "Search", data: {behavior: 'autocomplete_field', autocomplete_path: autocomplete_search_entries_path} %>
+        <div class="filter-search-preview" data-behavior="autocomplete_target"></div>
+      </div>
+    </li>
+  </ul>
+
+
+<% end %>

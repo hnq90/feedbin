@@ -1028,6 +1028,10 @@ th {
 			border-bottom: none;
 		}
 	}
+	&.padded li {
+		padding-top: 20px;
+		padding-bottom: 20px;
+	}
 	.service-title {
 		color: #212121;
 		font-size: 16px;
@@ -3256,6 +3260,9 @@ Settings
 		&.no-margin {
 			margin-bottom: 0;
 		}
+		&.no-border {
+			border-bottom: none;
+		}
 	}
 	h4 {
 		font-size: 18px;
@@ -3576,6 +3583,31 @@ table.small td {
 		}
 	}
 
+}
+
+.filter-search {
+	input[type="search"] {
+		width: 100%;
+		max-width: 100%;
+		border-radius: 0;
+		margin: 0;
+
+	}
+}
+
+.filter-search-preview {
+	.autocomplete-suggestions {
+		border-left: 1px solid transparent;
+		border-right: 1px solid transparent;
+		border-bottom: 1px solid transparent;
+		@include border-color($border-color, $border-color-night);
+	}
+	.autocomplete-suggestion {
+		color: #000;
+		padding: 5px;
+		pointer-events: none;
+		border-bottom: none;
+	}
 }
 
 [data-behavior="action_send_push_notification"] {

@@ -63,6 +63,7 @@ class Entry < ActiveRecord::Base
       page: params[:page],
       per_page: WillPaginate.per_page
     }
+
     unless params[:load] == false
       search_options[:load] = { include: :feed }
     end
@@ -76,6 +77,10 @@ class Entry < ActiveRecord::Base
         ids << user.unread_entries.pluck(:entry_id)
       elsif params[:read] == true
         filter :not, { ids: { values: user.unread_entries.pluck(:entry_id) } }
+      end
+
+      if params[:size].present?
+        size params[:size]
       end
 
       if params[:starred] == true

@@ -3465,125 +3465,7 @@ table.small td {
 	}
 }
 
-.actions-wrap {
-	background: $list-background-color;
-	padding: 8px 8px 1px 8px;
-	border: 1px solid $border-color;
-	border-bottom: none;
-}
 
-.action-form {
-	font-size: 14px;
-	position: relative;
-	border: 1px solid $border-color;
-	border-left-width: 5px;
-	padding: 8px 0;
-	background: #FFF;
-	padding: 8px;
-	margin-bottom: 7px;
-	&.selected {
-		border-color: $selected;
-	}
-	&:last-child {
-		border-bottom: none;
-	}
-	.delete-action {
-		position: absolute;
-		right: 10px;
-		top: 4px;
-		font-size: 20px;
-		line-height: 1;
-		font-weight: bold;
-		color: #999;
-		&:hover {
-			text-decoration: none;
-		}
-	}
-	.edit-action {
-		position: absolute;
-		right: 35px;
-		top: 8px;
-		font-size: 13px;
-	}
-	[type="search"] {
-		max-width: 300px;
-		margin-bottom: 0;
-		font-size: 14px !important;
-	}
-	.checkbox {
-		font-size: 13px;
-		input {
-			margin-top: 2px;
-			margin-left: -20px;
-		}
-	}
-	select {
-		font-size: 13px;
-		width: 150px;
-		overflow: hidden;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		option {
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-	}
-	.feed-ids {
-		overflow-y: auto;
-		overflow-x: hidden;
-		resize: vertical;
-		height: 78px;
-		border: 1px solid $border-color;
-		background: $list-background-color;
-		margin-bottom: 15px;
-		padding: 8px 6px;
-		width: 300px;
-		.checkbox {
-			resize: none;
-			float: none;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-			width: 100%;
-			display: block;
-			line-height: 1;
-			input {
-				margin-top: 0;
-			}
-		}
-	}
-
-	.description-item {
-		padding-bottom: 8px;
-	}
-	.action-description .action-data {
-		color: #999;
-	}
-	.action-label {
-		width: 80px;
-		margin-right: 10px;
-		text-align: right;
-		font-weight: bold;
-		float: left;
-	}
-	.action-data {
-		padding-top: 1px;
-		float: left;
-		width: 390px;
-	}
-	.action-keywords {
-		padding-top: 7px;
-	}
-	@media (max-width: 935px) {
-		.action-label {
-			text-align: left;
-			float: none;
-		}
-	}
-
-}
 
 .filter-search {
 	input[type="search"] {
@@ -3607,6 +3489,36 @@ table.small td {
 		padding: 5px;
 		pointer-events: none;
 		border-bottom: none;
+	}
+}
+
+.filter-feeds-include-all {
+	border: 1px solid $border-color;
+	border-bottom: none;
+	padding: 8px 6px;
+	background: $list-background-color;
+}
+.filter-feeds {
+	overflow-y: auto;
+	overflow-x: hidden;
+	resize: vertical;
+	height: 78px;
+	border: 1px solid $border-color;
+	border-top: none;
+	margin-bottom: 15px;
+	padding: 8px 6px;
+	.checkbox {
+		resize: none;
+		float: none;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		width: 100%;
+		display: block;
+		line-height: 1;
+		input {
+			margin-top: 0;
+		}
 	}
 }
 

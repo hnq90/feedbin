@@ -9,6 +9,7 @@ class ActionsController < ApplicationController
   end
 
   def new
+    @user = current_user
     @action = Action.new
   end
 

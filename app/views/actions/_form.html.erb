@@ -30,6 +30,7 @@
     </li>
 
     <li>
+        <p><strong>Article is in Feed or Tag</strong></p>
         <div class="filter-feeds-include-all">
           <label class="checkbox">
             <%= f.check_box :all_feeds, data: {behavior: 'check_feeds'} %>
@@ -59,6 +60,15 @@
     </li>
 
   </ul>
+
+  <h3 class="no-border">Then&hellip;</h3>
+  <ul class="pill-list padded">
+    <%= f.collection_check_boxes(:actions, Feedbin::Application.config.action_names, :value, :label) do |b|
+      content_tag :li, b.label(class: "checkbox") { b.check_box + b.text }, data: {behavior: "action_#{b.value}"}
+      end
+    %>
+  </ul>
+
 
 
 <% end %>

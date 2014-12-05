@@ -16,9 +16,6 @@ class Entry < ActiveRecord::Base
   after_commit :add_to_set, on: :create
   after_commit :increment_feed_stat, on: :create
   after_commit :touch_feed_last_published_entry, on: :create
-  after_commit :updated_entry, on: :update
-
-  validates_uniqueness_of :public_id
 
   tire_settings = {
     analysis: {
@@ -75,6 +72,10 @@ class Entry < ActiveRecord::Base
         ids << user.unread_entries.pluck(:entry_id)
       elsif params[:read] == true
         filter :not, { ids: { values: user.unread_entries.pluck(:entry_id) } }
+      end
+
+      if params[:size].present?
+        size params[:size]
       end
 
       if params[:starred] == true
@@ -210,17 +211,6 @@ class Entry < ActiveRecord::Base
     end
   end
 
-  def cache_key
-    additions = []
-    if defined?(read) && read
-      additions << '/read'
-    end
-    if defined?(starred) && starred
-      additions << '/starred'
-    end
-    super + additions.join('')
-  end
-
   def fully_qualified_url
     entry_url = self.url
     if entry_url.present? && is_fully_qualified(entry_url)
@@ -259,12 +249,7 @@ class Entry < ActiveRecord::Base
   end
 
   def cache_public_id
-    if self.updated
-      date = self.updated.to_s
-    else
-      date = 1
-    end
-    Sidekiq.redis { |client| client.hset("entry:public_ids:#{self.public_id[0..4]}", self.public_id, date) }
+    FeedbinUtils.update_public_id_cache(self.public_id, self.content)
   end
 
   def mark_as_unread
@@ -281,7 +266,7 @@ class Entry < ActiveRecord::Base
 
   def add_to_set
     score = "%10.6f" % self.created_at.to_f
-    key = Feedbin::Application.config.redis_feed_entries_created_at % self.feed_id
+    key = FeedbinUtils.redis_feed_entries_created_at_key(self.feed_id)
     $redis.zadd(key, score, self.id)
   end
 
@@ -290,11 +275,6 @@ class Entry < ActiveRecord::Base
     if result == 0
       FeedStat.create(feed_id: self.feed_id, day: self.published, entries_count: 1)
     end
-  end
-
-  def updated_entry
-    Sidekiq.redis { |client| client.hset("entry:public_ids:#{self.public_id[0..4]}", self.public_id, self.updated.to_s) }
-    SearchIndexStore.perform_async(self.class.name, self.id, true)
   end
 
   def create_summary

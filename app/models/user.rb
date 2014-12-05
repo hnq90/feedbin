@@ -7,7 +7,8 @@ class User < ActiveRecord::Base
   store_accessor :settings, :entry_sort, :previous_read_count, :starred_feed_enabled,
                  :hide_tagged_feeds, :precache_images, :show_unread_count, :sticky_view_inline,
                  :mark_as_read_confirmation, :font_size, :font, :entry_width, :apple_push_notification_device_token,
-                 :mark_as_read_push_view, :keep_unread_entries, :receipt_info, :theme, :favicon_hash
+                 :mark_as_read_push_view, :keep_unread_entries, :receipt_info, :theme, :favicon_hash,
+                 :entries_display, :entries_feed, :entries_time, :entries_body, :ui_typeface
 
   has_one :coupon
   has_many :subscriptions, dependent: :delete_all
@@ -24,13 +25,12 @@ class User < ActiveRecord::Base
   has_many :saved_searches, dependent: :delete_all
   has_many :actions, dependent: :destroy
   has_many :recently_read_entries, dependent: :delete_all
+  has_many :updated_entries, dependent: :delete_all
   belongs_to :plan
 
   accepts_nested_attributes_for :sharing_services,
                                 allow_destroy: true,
                                 reject_if: -> attributes { attributes['label'].blank? || attributes['url'].blank? }
-
-  accepts_nested_attributes_for :actions, allow_destroy: true, reject_if: :all_blank
 
   before_save :update_billing, unless: -> user { user.admin || !ENV['STRIPE_API_KEY'] }
   before_destroy :cancel_billing, unless: -> user { user.admin }
@@ -51,6 +51,10 @@ class User < ActiveRecord::Base
 
   def to_param
     email
+  end
+
+  def setting_on?(setting_symbol)
+    self.send(setting_symbol) == '1'
   end
 
   def activate_subscriptions
@@ -148,6 +152,7 @@ class User < ActiveRecord::Base
         if stripe_token.present?
           customer.card = stripe_token
           self.suspended = false
+          subscriptions.update_all(active: true)
         end
         customer.plan = plan.stripe_id
         customer.email = email
@@ -184,21 +189,6 @@ class User < ActiveRecord::Base
     starred_entries.count
   end
 
-  def title_with_count
-    if self.show_unread_count == '1'
-      @title_count ||= unread_entries.limit(1000).count
-      if @title_count == 0
-        "Feedbin"
-      elsif @title_count >= 1_000
-        "Feedbin (1,000+)"
-      else
-        "Feedbin (#{@title_count.to_s})"
-      end
-    else
-      "Feedbin"
-    end
-  end
-
   # TODO make sure zero counts get hidden, maybe load feeds based on this list
   def unread_count
     @count ||= unread_entries.group(:feed_id).count
@@ -218,77 +208,22 @@ class User < ActiveRecord::Base
     feeds.select("feeds.*, subscriptions.id as subscription_id").where("feeds.id = ? AND subscriptions.user_id = #{self.id}", feed_id).first
   end
 
-  def feed_count(view_mode, user_feeds, selected_item = nil, keep_selected = false)
-    if 'view_starred' == view_mode
-      counts = starred_count
-    else
-      counts = unread_count
-    end
-
-    user_feeds.map do |feed|
-      feed.count = counts[feed.id] || 0
-      feed
-    end
-
-    if selected_item =~ /feed_/
-      selected_item = selected_item.sub('feed_', '').to_i
-    end
-
-    if %w{view_unread view_starred}.include?(view_mode)
-      user_feeds = user_feeds.reject do |feed|
-        if keep_selected && feed.id == selected_item
-          false
-        else
-          feed.count == 0
-        end
-      end
-    end
-    user_feeds
-  end
-
-  def owned_tags_with_count(view_mode, selected_item = nil, keep_selected = false)
-    taggings = feed_tags
+  def tag_group
+    unique_tags = feed_tags
     feeds_by_tag = build_feeds_by_tag
-    feeds_with_count = feed_count(view_mode, feeds.include_user_title, selected_item, true)
-
-    if selected_item =~ /tag_/
-      selected_tag = selected_item.sub('tag_', '').to_i
-    else
-      selected_tag = nil
+    feeds_by_id = feeds.include_user_title
+    feeds_by_id = feeds_by_id.each_with_object({}) do |feed, hash|
+      hash[feed.id] = feed
     end
 
-    if 'view_starred' == view_mode
-      counts = starred_count
-    else
-      counts = unread_count
-    end
-
-    taggings.each do |tag|
+    unique_tags.map do |tag|
       feed_ids = feeds_by_tag[tag.id] || []
-      tag.count = feed_ids.inject(0) do |sum, feed_id|
-        count = counts[feed_id] || 0
-        sum + count
-      end
-
-      tag.user_feeds = []
-      feeds_with_count.each do |feed|
-        if feed_ids.include?(feed.id)
-          tag.user_feeds << feed
-        end
-      end
+      user_feeds = feeds_by_id.values_at(*feed_ids).compact
+      tag.user_feeds = user_feeds.sort_by { |feed| feed.title.try(:downcase) }
+      tag
     end
 
-    if %w{view_unread view_starred}.include?(view_mode)
-      taggings = taggings.reject do |tag|
-        if selected_item && tag.id == selected_tag || tag.user_feeds.any?
-          false
-        else
-          tag.count == 0
-        end
-      end
-    end
-
-    taggings
+    unique_tags
   end
 
   def subscribe!(feed)
@@ -326,7 +261,6 @@ class User < ActiveRecord::Base
   end
 
   def build_feeds_by_tag
-    tags = {}
     query = <<-eos
       SELECT
         tag_id, array_to_json(array_agg(feed_id)) as feed_ids
@@ -337,10 +271,9 @@ class User < ActiveRecord::Base
     eos
     query = ActiveRecord::Base.send(:sanitize_sql_array, [query, self.id, subscriptions.pluck(:feed_id)])
     results = ActiveRecord::Base.connection.execute(query)
-    results.each do |result|
-      tags[result['tag_id'].to_i] = JSON.parse(result['feed_ids'])
+    results.each_with_object({}) do |result, hash|
+      hash[result['tag_id'].to_i] = JSON.parse(result['feed_ids'])
     end
-    tags
   end
 
   def create_deleted_user

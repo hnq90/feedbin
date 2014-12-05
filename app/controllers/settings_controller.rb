@@ -18,6 +18,11 @@ class SettingsController < ApplicationController
     @user = current_user
   end
 
+  def appearance
+    @user = current_user
+    @classes = user_classes
+  end
+
   def feeds
     @user = current_user
     @subscriptions = @user.subscriptions.select('subscriptions.*, feeds.title AS original_title, feeds.last_published_entry AS last_published_entry, feeds.feed_url, feeds.site_url, feeds.host').joins("INNER JOIN feeds ON subscriptions.feed_id = feeds.id AND subscriptions.user_id = #{@user.id}")
@@ -87,25 +92,27 @@ class SettingsController < ApplicationController
   end
 
   def update_plan
-    plan = Plan.find(params[:plan])
     @user = current_user
-    @user.plan = plan
-    @user.save
+    plan = Plan.find(params[:plan])
     customer = Stripe::Customer.retrieve(@user.customer_id)
     customer.update_subscription(plan: plan.stripe_id)
-    redirect_to settings_billing_path
+    @user.plan = plan
+    @user.save
+    redirect_to settings_billing_path, notice: 'Plan successfully changed.'
+  rescue Stripe::CardError
+    redirect_to settings_billing_path, alert: "Your card was declined, please update your billing information."
   end
 
   def update_credit_card
     @user = current_user
     @user.stripe_token = params[:stripe_token]
 
-    respond_to do |format|
-      if @user.save
-        format.html { redirect_to settings_billing_url, notice: 'Your credit card has been updated.' }
-      else
-        format.html { redirect_to settings_billing_url, alert: @user.errors.messages[:base].join(' ') }
-      end
+    if @user.save
+      customer = Customer.retrieve(@user.customer_id)
+      customer.reopen_account if customer.unpaid?
+      redirect_to settings_billing_url, notice: 'Your credit card has been updated.'
+    else
+      redirect_to settings_billing_url, alert: @user.errors.messages[:base].join(' ')
     end
   end
 
@@ -160,12 +167,11 @@ class SettingsController < ApplicationController
 
   def theme
     @user = current_user
-    if @user.theme.blank? || @user.theme == 'day'
-      @user.theme = 'night'
-    else
-      @user.theme = 'day'
+    themes = ['day', 'night', 'sunset']
+    if themes.include?(params[:theme])
+      @user.theme = params[:theme]
+      @user.save
     end
-    @user.save
     render nothing: true
   end
 
@@ -206,7 +212,10 @@ class SettingsController < ApplicationController
   end
 
   def user_settings_params
-    params.require(:user).permit(:entry_sort, :starred_feed_enabled, :hide_tagged_feeds, :precache_images, :show_unread_count, :sticky_view_inline, :mark_as_read_confirmation, :apple_push_notification_device_token, :receipt_info)
+    params.require(:user).permit(:entry_sort, :starred_feed_enabled, :hide_tagged_feeds, :precache_images,
+                                 :show_unread_count, :sticky_view_inline, :mark_as_read_confirmation,
+                                 :apple_push_notification_device_token, :receipt_info, :entries_display,
+                                 :entries_feed, :entries_time, :entries_body, :ui_typeface, :theme)
   end
 
   def get_entry_counts(feed_ids)

@@ -1,1 +1,0 @@
-Feedbin::Application.config.redis_feed_entries_created_at = "feed:%d:entry_ids:created_at"

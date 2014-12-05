@@ -9,7 +9,6 @@ class SavedSearchesController < ApplicationController
     params[:query] = @saved_search.query
 
     @entries = Entry.search(params, @user)
-    @entries = update_with_state(@entries)
     @page_query = @entries
 
     @append = params[:page].present?
@@ -18,7 +17,6 @@ class SavedSearchesController < ApplicationController
     @data = nil
 
     @collection_title = @saved_search.name
-    @collection_favicon = 'favicon-search'
 
     respond_to do |format|
       format.js { render partial: 'shared/entries' }

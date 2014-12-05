@@ -8,20 +8,23 @@ class BigBatch
     finish = batch * batch_size
     ids = (start..finish).to_a
 
-    ids.each do |feed_id|
-      query = "SELECT date_trunc('day', published) as day, count(*) as entries_count FROM entries WHERE feed_id = ? AND published > ? GROUP BY day"
-      query = ActiveRecord::Base.send(:sanitize_sql_array, [query, feed_id, 30.days.ago])
-      results = ActiveRecord::Base.connection.execute(query)
-      results.each do |result|
-        updated_record_count = FeedStat.where(feed_id: feed_id, day: result['day']).update_all(entries_count: result['entries_count'])
-        if updated_record_count == 0
-          FeedStat.create(feed_id: feed_id, day: result['day'], entries_count: result['entries_count'])
+    Entry.where(id: ids, published: nil).each do |entry|
+      if entry.original.present? && entry.original['published'].present?
+        published = Time.parse(entry.original['published'])
+
+        entry.update_attribute(:published, published)
+
+        starred_entries = StarredEntry.where(entry_id: entry.id, published: nil)
+        unread_entries = UnreadEntry.where(entry_id: entry.id, published: nil)
+        if starred_entries.present?
+          starred_entries.update_all(published: published)
+        end
+        if unread_entries.present?
+          unread_entries.update_all(published: published)
         end
       end
     end
 
-
   end
-
 
 end

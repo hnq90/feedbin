@@ -9,12 +9,10 @@ class RecentlyReadEntriesController < ApplicationController
     recently_read_entries.each {|recently_read_entry| recently_read_entry_ids << recently_read_entry.entry_id}
     @entries = Entry.where(id: recently_read_entry_ids).includes(:feed)
     @entries = @entries.sort_by{ |entry| recently_read_entry_ids.index(entry.id) }
-    @entries = update_with_state(@entries)
 
     @type = 'recently_read'
 
     @collection_title = 'Recently Read'
-    @collection_favicon = 'favicon-recently-read'
 
     respond_to do |format|
       format.js { render partial: 'shared/entries' }

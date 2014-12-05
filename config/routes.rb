@@ -53,8 +53,8 @@ Feedbin::Application.routes.draw do
   resources :imports
   resources :sessions
   resources :password_resets
-  resources :sharing_services, path: 'settings/sharing', only: [:index]
-  resources :actions, path: 'settings/actions', only: [:index]
+  resources :sharing_services, path: 'settings/sharing', only: [:index, :create, :update, :destroy]
+  resources :actions, path: 'settings/actions', only: [:index, :create, :new, :update, :destroy, :edit]
   resources :saved_searches
 
   resources :supported_sharing_services, only: [:create, :destroy, :update] do
@@ -71,6 +71,10 @@ Feedbin::Application.routes.draw do
   resources :subscriptions,  only: [:index, :create, :destroy] do
     collection do
       patch :update_multiple
+      delete :destroy_all
+    end
+    member do
+      delete :settings_destroy
     end
   end
 
@@ -78,12 +82,11 @@ Feedbin::Application.routes.draw do
     member do
       patch :settings_update, controller: :settings
       patch :view_settings_update, controller: :settings
-      patch :sharing_services_update, controller: :sharing_services
-      patch :actions_update, controller: :actions
     end
   end
 
   resources :feeds, only: [:index, :edit, :create, :update] do
+    patch :rename
     resources :entries, only: [:index], controller: :feeds_entries
     collection do
       get :view_unread
@@ -111,7 +114,9 @@ Feedbin::Application.routes.draw do
       get :unread
       get :preload
       get :search
+      get :autocomplete_search
       get :recently_read, to: 'recently_read_entries#index'
+      get :updated, to: 'updated_entries#index'
       post :mark_all_as_read
       post :mark_direction_as_read
     end
@@ -124,6 +129,7 @@ Feedbin::Application.routes.draw do
     get :import_export
     get :feeds
     get :help
+    get :appearance
     post :update_credit_card
     post :mark_favicon_complete
     post :update_plan

@@ -1,0 +1,113 @@
+<div class="settings-content-inner">
+  <div class="settings-outer">
+    <h2>Appearance</h2>
+  </div>
+
+  <div class="inset">
+
+    <div class="preview-group">
+      <div class="inset-content">
+        <h4 class="group-header">Preview</h4>
+      </div>
+      <ul class="control-group">
+        <li class="theme-background <%= @classes %>" data-behavior="entries_max_width class_target">
+
+          <div data-behavior="preview_min_height">
+            <div class="entries-wrap">
+              <div class="entries">
+                <ul>
+                  <li data-behavior="responsive_text_size">
+                    <span class="wrap">
+                      <span class="entries-inner-wrap">
+                        <span class="favicon-wrap">
+                          <span class="favicon" style="background: url(https://www.google.com/s2/favicons?domain=foodinjars.com);"></span>
+                        </span>
+                        <p class="feed-title"><span class="title-inner">Food in Jars</span></p>
+                        <time class="time">1h</time>
+                        <span class="title-wrap">
+                          <h2 class="title">
+                            <span class="favicon-wrap">
+                              <span class="favicon" style="background: url(https://www.google.com/s2/favicons?domain=foodinjars.com);"></span>
+                            </span>
+                            Spicy Peach and Yellow Tomato Jam
+                          </h2>
+                          <p class="body">I made this jam back before my trip to Portland and have been meaning to share it&hellip;</p>
+                        </span>
+                      </span>
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </li>
+      </ul>
+    </div>
+
+    <%= form_for @user, url: settings_update_user_path(@user) do |f| %>
+      <%= hidden_field_tag :redirect_to, settings_appearance_url %>
+
+      <div class="inset-content">
+        <h4 class="group-header">Theme</h4>
+      </div>
+      <ul class="control-group control-group-form">
+        <li>
+          <%= f.radio_button(:theme, "day", {checked: @user.theme.nil? || @user.theme === 'day', data: {behavior: 'appearance_radio', setting: 'theme'}}) %>
+          <%= f.label(:theme_day, "Day") %>
+        </li>
+        <li>
+          <%= f.radio_button(:theme, "sunset", {data: {behavior: 'appearance_radio', setting: 'theme'}}) %>
+          <%= f.label(:theme_sunset, "Sunset") %>
+        </li>
+        <li>
+          <%= f.radio_button(:theme, "night", {data: {behavior: 'appearance_radio', setting: 'theme'}}) %>
+          <%= f.label(:theme_night, "Night") %>
+        </li>
+      </ul>
+
+      <div class="inset-content">
+        <h4 class="group-header">Summary Display</h4>
+      </div>
+      <ul class="control-group control-group-form">
+        <li>
+          <%= f.radio_button(:entries_display, "block", {checked: @user.entries_display.nil? || @user.entries_display === 'block', data: {behavior: 'appearance_radio', setting: 'entries-display'}}) %>
+          <%= f.label(:entries_display_block, "Default") %>
+        </li>
+        <li>
+          <%= f.radio_button(:entries_display, "inline", {data: {behavior: 'appearance_radio', setting: 'entries-display'}}) %>
+          <%= f.label(:entries_display_inline, "Inline") %>
+        </li>
+      </ul>
+
+      <div class="inset-content">
+        <h4 class="group-header">Interface Elements</h4>
+      </div>
+      <ul class="control-group control-group-form">
+        <li>
+          <%= f.check_box :entries_feed, {checked: @user.entries_feed.nil? || @user.entries_feed == '1', data: {behavior: 'appearance_checkbox', setting: 'entries-feed'} } %>
+          <%= f.label :entries_feed do %>
+            Feed Name <span class="slider-checkbox"></span>
+          <% end %>
+        </li>
+        <li>
+          <%= f.check_box :entries_time, {checked: @user.entries_time.nil? || @user.entries_time == '1', data: {behavior: 'appearance_checkbox', setting: 'entries-time'} } %>
+          <%= f.label :entries_time do %>
+            Date <span class="slider-checkbox"></span>
+          <% end %>
+        </li>
+        <li>
+          <%= f.check_box :entries_body, {checked: @user.entries_body.nil? || @user.entries_body == '1', data: {behavior: 'appearance_checkbox', setting: 'entries-body'} } %>
+          <%= f.label :entries_body do %>
+            Summary <span class="slider-checkbox"></span>
+          <% end %>
+        </li>
+      </ul>
+
+      <div class="description-inset">
+        <%= f.submit "Save", class: 'button-plain no-margin' %>
+      </div>
+
+    <% end %>
+  </div>
+</div>

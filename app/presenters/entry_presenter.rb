@@ -2,45 +2,17 @@ class EntryPresenter < BasePresenter
 
   presents :entry
 
-  def read_state
-    if entry.read
-      'read'
-    else
-      ''
-    end
-  end
-
-  def starred_state
-    if entry.starred
-      'starred'
-    else
-      ''
-    end
-  end
-
-  def media_state
-    if has_media?
-      'media'
-    else
-      ''
-    end
-  end
-
-  def classes
-    classes = []
-    classes << read_state
-    classes << starred_state
-    classes.join ' '
-  end
-
   def entry_link(&block)
-    @template.link_to @template.entry_path(entry), {
+    options = {
       remote: true, class: 'wrap', data: {
-        behavior: 'selectable reset_entry_content_position open_item show_entry_content',
+        behavior: 'selectable open_item show_entry_content entry_info',
         mark_as_read_path: @template.mark_as_read_entry_path(entry),
-        recently_read_path: @template.recently_read_entry_path(entry)
+        recently_read_path: @template.recently_read_entry_path(entry),
+        entry_id: entry.id,
+        entry_info: {id: entry.id, feed_id: entry.feed_id, published: entry.published.to_i}
       }
-    } do
+    }
+    @template.link_to @template.entry_path(entry), options do
       yield
     end
   end
@@ -124,10 +96,12 @@ class EntryPresenter < BasePresenter
 
   def author
     if entry.author
-      "by " + @template.strip_tags(entry.author)
+      clean_author = @template.strip_tags(entry.author)
+      clean_author = "by " + @template.content_tag(:span, clean_author, class: "author")
     else
-      ''
+      clean_author = ''
     end
+    clean_author.html_safe
   end
 
   def media_size

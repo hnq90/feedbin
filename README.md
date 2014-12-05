@@ -2,6 +2,7 @@ Feedbin
 =======
 [![Code Climate](https://codeclimate.com/github/feedbin/feedbin.png)](https://codeclimate.com/github/feedbin/feedbin)
 [![Build Status](https://travis-ci.org/feedbin/feedbin.png?branch=master)](https://travis-ci.org/feedbin/feedbin)
+[![Test Coverage](https://codeclimate.com/github/feedbin/feedbin/badges/coverage.svg)](https://codeclimate.com/github/feedbin/feedbin)
 
 Feedbin is a simple, fast and nice looking RSS reader.
 
@@ -89,7 +90,7 @@ export AWS_ACCESS_KEY_ID=aoisjf3j23oij23f
 
 - [Mac OS X](doc/INSTALL-mac.md)
 - [Ubuntu](doc/INSTALL-ubuntu.md) (incomplete)
-- [Fedora 19](doc/INSTALL-fedora.md)
+- [Fedora](doc/INSTALL-fedora.md)
 
 
 ### Pair With Me

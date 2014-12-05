@@ -1,7 +1,5 @@
 class SubscriptionsController < ApplicationController
 
-  before_action :correct_user, only: :destroy
-
   # GET subscriptions.xml
   def index
     @user = current_user
@@ -62,19 +60,22 @@ class SubscriptionsController < ApplicationController
   # DELETE /subscriptions/1
   # DELETE /subscriptions/1.json
   def destroy
-    @user = current_user
-    @subscription = Subscription.find(params[:id])
-
-    # Remove tags on this feed before destorying subscription
-    @subscription.feed.tag('', @user)
-
-    # Get rid of the subscription relationship
-    @subscription.destroy
-
+    destroy_subscription
     get_feeds_list
     respond_to do |format|
       format.js
     end
+  end
+
+  def settings_destroy
+    destroy_subscription
+    redirect_to settings_feeds_url, notice: 'You have successfully unsubscribed.'
+  end
+
+  def destroy_subscription
+    @user = current_user
+    @subscription = @user.subscriptions.find(params[:id])
+    @subscription.destroy
   end
 
   def update_multiple
@@ -92,6 +93,12 @@ class SubscriptionsController < ApplicationController
       Subscription.update(allowed_params.keys, allowed_params.values)
       redirect_to settings_feeds_url, notice: "Feeds updated."
     end
+  end
+
+  def destroy_all
+    @user = current_user
+    @user.subscriptions.destroy_all
+    redirect_to settings_feeds_url, notice: "You have unsubscribed."
   end
 
   private
@@ -113,11 +120,6 @@ class SubscriptionsController < ApplicationController
     end
 
     params.require(:subscriptions).permit!
-  end
-
-  def correct_user
-    @subscription = current_user.subscriptions.find_by_id(params[:id])
-    render_404 if @subscription.nil?
   end
 
 end

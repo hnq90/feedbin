@@ -2,16 +2,19 @@
 <html>
 <head>
   <title><%= @title || 'Feedbin' %></title>
-  <%= render partial: 'shared/mobile_meta' %>
+  <meta name="viewport" content="initial-scale=1.0,width=device-width,user-scalable=no" />
+  <link rel="apple-touch-icon-precomposed" href="<%= asset_path('apple-touch-icon-precomposed.png') %>" />
   <%= stylesheet_link_tag "application", media: 'all'  %>
-  <%= yield(:head) %>
   <%= javascript_include_tag "application" %>
+  <%= yield(:head) %>
   <%= csrf_meta_tags %>
   <%= tag :meta, name: "stripe-key", content: STRIPE_PUBLIC_KEY %>
 </head>
-<body class="<%= @class %>">
+<body class="<%= @class %>" data-behavior="<%= @behavior %>">
   <%= content_for?(:content) ? yield(:content) : yield %>
   <%= render partial: 'shared/tracking' %>
   <%= render partial: 'shared/favicons' %>
+  <%= render partial: 'shared/fonts' %>
+  <%= render partial: 'shared/tweets' %>
 </body>
 </html>

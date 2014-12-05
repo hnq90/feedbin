@@ -44,7 +44,7 @@ class FeedFetcher
   end
 
   def get_options
-    content = Feedzirra::Feed.fetch_raw(@url, {user_agent: 'Feedbin'})
+    content = Feedzirra::Feed.fetch_raw(@url, {user_agent: 'Feedbin', ssl_verify_peer: false})
     if content.is_a?(String)
       content = Nokogiri::HTML(content)
 
@@ -93,7 +93,7 @@ class FeedFetcher
       @feed = Feed.create_from_feedzirra(@parsed_feed, @site_url)
       if @parsed_feed.respond_to?(:hubs) && !@parsed_feed.hubs.blank?
         hub_secret = Push::hub_secret(@feed.id)
-        push_subscribe(@parsed_feed, @feed.id, Push::callback_url(feed), hub_secret)
+        push_subscribe(@parsed_feed, @feed.id, Push::callback_url(@feed), hub_secret)
       end
     end
 
@@ -117,7 +117,7 @@ class FeedFetcher
         Honeybadger.notify(
           error_class: "PuSH",
           error_message: "PuSH Subscribe Failed",
-          parameters: e
+          parameters: {exception: e}
         )
       end
     end
@@ -150,14 +150,16 @@ class FeedFetcher
 
   # Fetch and normalize feed
   def fetch_and_parse(options = {}, saved_feed_url = nil)
-    defaults = {user_agent: 'Feedbin'}
+    defaults = {user_agent: 'Feedbin', ssl_verify_peer: false}
     options = defaults.merge(options)
     feedzirra = nil
     Timeout::timeout(20) do
       feedzirra = Feedzirra::Feed.fetch_and_parse(@url, options)
     end
     if feedzirra.respond_to?(:hubs) && !feedzirra.hubs.blank? && options[:push_callback] && options[:feed_id]
-      push_subscribe(feedzirra, options[:feed_id], options[:push_callback], options[:hub_secret])
+      if @url == feedzirra.feed_url
+        push_subscribe(feedzirra, options[:feed_id], options[:push_callback], options[:hub_secret])
+      end
     end
     normalize(feedzirra, options, saved_feed_url)
   end

@@ -1,7 +1,8 @@
 source 'https://rubygems.org'
-ruby '2.1.1'
+ruby '2.1.4'
 
 gem 'rails'
+gem 'rest-client', '= 1.6.7'
 
 group :development do
   gem 'better_errors'
@@ -9,7 +10,6 @@ group :development do
   gem 'capistrano', '~> 2.15.5'
   gem 'capistrano-unicorn', github: 'sosedoff/capistrano-unicorn', ref: '52376ad', require: false
   gem 'dotenv-rails'
-  gem 'logster'
   gem 'silencer'
   gem 'spring'
 end
@@ -20,6 +20,10 @@ group :development, :test do
   gem 'faker'
 end
 
+group :test do
+  gem "codeclimate-test-reporter", require: nil
+end
+
 group :production do
   gem "therubyracer", require: 'v8'
 end
@@ -28,7 +32,7 @@ gem 'pg'
 gem 'unicorn'
 
 gem 'opml_saw',              github: 'feedbin/opml_saw',            ref: '61d8c2d'
-gem 'feedzirra',             github: 'feedbin/feedzirra',           ref: 'c7a1f10'
+gem 'feedzirra',             github: 'feedbin/feedzirra',           ref: '91f9a17'
 gem 'html-pipeline',         github: 'benubois/html-pipeline',      ref: 'd71de03'
 gem 'grocer-pushpackager',   github: 'feedbin/grocer-pushpackager', ref: 'e190796', require: 'grocer/pushpackager'
 gem 'html_diff',             github: 'feedbin/html_diff',           ref: 'c7c15ce'

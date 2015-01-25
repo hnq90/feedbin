@@ -20,6 +20,8 @@ class EntryDeleter
 
       # Delete records
       UnreadEntry.where(entry_id: entries_to_delete_ids).delete_all
+      UpdatedEntry.where(entry_id: entries_to_delete_ids).delete_all
+      RecentlyReadEntry.where(entry_id: entries_to_delete_ids).delete_all
       entries_to_delete.delete_all
 
       Sidekiq.redis do |conn|
@@ -31,10 +33,12 @@ class EntryDeleter
         end
       end
 
-      key = FeedbinUtils.redis_feed_entries_created_at_key(feed_id)
+      key_created_at = FeedbinUtils.redis_feed_entries_created_at_key(feed_id)
+      key_published = FeedbinUtils.redis_feed_entries_published_key(feed_id)
       if entries_to_delete_ids.present?
         SearchIndexRemove.perform_async(entries_to_delete_ids)
-        $redis.zrem(key, entries_to_delete_ids)
+        $redis.zrem(key_created_at, entries_to_delete_ids)
+        $redis.zrem(key_published, entries_to_delete_ids)
       end
 
       Librato.increment('entry.destroy', by: entries_to_delete_ids.count)

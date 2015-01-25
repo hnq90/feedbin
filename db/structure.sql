@@ -598,7 +598,9 @@ CREATE TABLE subscriptions (
     title text,
     view_inline boolean DEFAULT false,
     active boolean DEFAULT true,
-    push boolean DEFAULT false
+    push boolean DEFAULT false,
+    show_updates boolean DEFAULT true,
+    muted boolean DEFAULT false
 );
 
 
@@ -1234,6 +1236,13 @@ CREATE INDEX index_recently_read_entries_on_created_at ON recently_read_entries 
 
 
 --
+-- Name: index_recently_read_entries_on_entry_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_recently_read_entries_on_entry_id ON recently_read_entries USING btree (entry_id);
+
+
+--
 -- Name: index_recently_read_entries_on_user_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -1308,6 +1317,20 @@ CREATE INDEX index_subscriptions_on_created_at ON subscriptions USING btree (cre
 --
 
 CREATE INDEX index_subscriptions_on_feed_id ON subscriptions USING btree (feed_id);
+
+
+--
+-- Name: index_subscriptions_on_feed_id_and_active_and_muted; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_subscriptions_on_feed_id_and_active_and_muted ON subscriptions USING btree (feed_id, active, muted);
+
+
+--
+-- Name: index_subscriptions_on_updates; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_subscriptions_on_updates ON subscriptions USING btree (feed_id, active, muted, show_updates);
 
 
 --
@@ -1716,4 +1739,10 @@ INSERT INTO schema_migrations (version) VALUES ('20141022031229');
 INSERT INTO schema_migrations (version) VALUES ('20141110225053');
 
 INSERT INTO schema_migrations (version) VALUES ('20141117192421');
+
+INSERT INTO schema_migrations (version) VALUES ('20141202203934');
+
+INSERT INTO schema_migrations (version) VALUES ('20141208231955');
+
+INSERT INTO schema_migrations (version) VALUES ('20141215195928');
 

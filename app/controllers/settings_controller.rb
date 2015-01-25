@@ -25,7 +25,7 @@ class SettingsController < ApplicationController
 
   def feeds
     @user = current_user
-    @subscriptions = @user.subscriptions.select('subscriptions.*, feeds.title AS original_title, feeds.last_published_entry AS last_published_entry, feeds.feed_url, feeds.site_url, feeds.host').joins("INNER JOIN feeds ON subscriptions.feed_id = feeds.id AND subscriptions.user_id = #{@user.id}")
+    @subscriptions = @user.subscriptions.select('subscriptions.*, feeds.title AS original_title, feeds.last_published_entry AS last_published_entry, feeds.feed_url, feeds.site_url, feeds.host').joins("INNER JOIN feeds ON subscriptions.feed_id = feeds.id AND subscriptions.user_id = #{@user.id}").includes(:feed)
 
     feed_ids = @subscriptions.map {|subscription| subscription.feed_id}
     entry_counts = Rails.cache.fetch("#{@user.id}:entry_counts", expires_in: 24.hours) { get_entry_counts(feed_ids) }
@@ -72,6 +72,13 @@ class SettingsController < ApplicationController
     @user = current_user
     @uploader = Import.new.upload
     @uploader.success_action_redirect = settings_import_export_url
+    @tags = @user.feed_tags
+
+    @download_options = @tags.map do |tag|
+      [tag.name, tag.id]
+    end
+
+    @download_options.unshift(['All', 'all'])
 
     if params[:key]
       @import = Import.new(key: params[:key], user: @user)
@@ -105,15 +112,21 @@ class SettingsController < ApplicationController
 
   def update_credit_card
     @user = current_user
-    @user.stripe_token = params[:stripe_token]
 
-    if @user.save
-      customer = Customer.retrieve(@user.customer_id)
-      customer.reopen_account if customer.unpaid?
-      redirect_to settings_billing_url, notice: 'Your credit card has been updated.'
+    if params[:stripe_token].present?
+      @user.stripe_token = params[:stripe_token]
+      if @user.save
+        customer = Customer.retrieve(@user.customer_id)
+        customer.reopen_account if customer.unpaid?
+        redirect_to settings_billing_url, notice: 'Your credit card has been updated.'
+      else
+        redirect_to settings_billing_url, alert: @user.errors.messages[:base].join(' ')
+      end
     else
-      redirect_to settings_billing_url, alert: @user.errors.messages[:base].join(' ')
+      redirect_to settings_billing_url, alert: 'There was a problem updating your credit card. Please try again.'
+      Librato.increment('billing.token_missing')
     end
+
   end
 
   def settings_update
@@ -215,7 +228,8 @@ class SettingsController < ApplicationController
     params.require(:user).permit(:entry_sort, :starred_feed_enabled, :hide_tagged_feeds, :precache_images,
                                  :show_unread_count, :sticky_view_inline, :mark_as_read_confirmation,
                                  :apple_push_notification_device_token, :receipt_info, :entries_display,
-                                 :entries_feed, :entries_time, :entries_body, :ui_typeface, :theme)
+                                 :entries_feed, :entries_time, :entries_body, :ui_typeface, :theme,
+                                 :hide_recently_read, :hide_updated)
   end
 
   def get_entry_counts(feed_ids)

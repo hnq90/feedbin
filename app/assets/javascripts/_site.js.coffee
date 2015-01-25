@@ -104,7 +104,7 @@ $.extend feedbin,
       feedId = $(@).data('feed-id')
       if (feedId of feedbin.data.user_titles)
         newTitle = feedbin.data.user_titles[feedId]
-        $(@).text(newTitle)
+        $(@).html(newTitle)
 
   queryString: (name) ->
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]")
@@ -165,6 +165,9 @@ $.extend feedbin,
     target = $('[data-behavior~=entry_content_wrap]')[0]
     result = twttr.widgets.load(target)
 
+  formatInstagram: ->
+    instgrm.Embeds.process()
+
   formatEntryContent: (entryId, resetScroll=true, readability=true) ->
     feedbin.applyStarred(entryId)
     if resetScroll
@@ -180,6 +183,7 @@ $.extend feedbin,
       feedbin.applyUserTitles()
       feedbin.fitVids()
       feedbin.formatTweets()
+      feedbin.formatInstagram()
     catch error
       if 'console' of window
         console.log error
@@ -321,20 +325,31 @@ $.extend feedbin,
 
   drawBarChart: (canvas, values) ->
     if values
-      spaceWidth = 1
-      barWidth = 5
+      barWidth = 3
       if canvas.getContext
         context = canvas.getContext("2d")
-        canvasHeight = $(canvas).attr('height')
+        canvasHeight = $(canvas).attr('height') - 2
         if 'devicePixelRatio' of window
           context = feedbin.retinaCanvas(canvas, context)
-        context.fillStyle = "#DDDDDD"
+
         xPosition = 0
+
+        context.strokeStyle = '#DDDDDD'
+        context.lineWidth = 2
+        context.beginPath()
+
+        height = Math.ceil(values.shift() * canvasHeight)
+        yPosition = (canvasHeight - height)
+
+        context.moveTo(xPosition, yPosition)
+
         for value in values
           height = Math.ceil(value * canvasHeight)
-          yPosition = canvasHeight - height
-          context.fillRect(xPosition, yPosition, barWidth, height)
-          xPosition = xPosition + barWidth + spaceWidth
+          yPosition = (canvasHeight - height) + 1
+          xPosition = xPosition + barWidth
+          context.lineTo(xPosition, yPosition)
+
+        context.stroke()
 
   readabilityActive: ->
     $('[data-behavior~=toggle_content_view]').find('.active').length > 0
@@ -442,9 +457,10 @@ $.extend feedbin,
 
     renameFeed: ->
       $(document).on 'dblclick', '[data-behavior~=renamable]', (event) ->
-        feedTitle = $(@).find('.rename-feed-input')
-        feedTitle.removeClass('disabled')
-        feedTitle.select()
+        unless $(event.target).is('.feed-action-button')
+          feedTitle = $(@).find('.rename-feed-input')
+          feedTitle.removeClass('disabled')
+          feedTitle.select()
 
       $(document).on 'blur', '.rename-feed-input', (event) ->
         field = $(@)
@@ -709,14 +725,19 @@ $.extend feedbin,
         event.preventDefault()
         return
 
-    checkBoxToggle: ->
-      $(document).on 'click', '[data-behavior~=check_all]', (event) =>
-        $('[type="checkbox"]').prop('checked', true)
-        event.preventDefault()
-        return
+    feedActions: ->
+      $(document).on 'click', '[data-operation]', (event) ->
+        operation = $(@).data('operation')
+        form = $(@).parents('form')
+        $('input[name=operation]').val(operation)
+        form.submit()
 
-      $(document).on 'click', '[data-behavior~=check_none]', (event) =>
-        $('[type="checkbox"]').prop('checked', false)
+    checkBoxToggle: ->
+      $(document).on 'change', '[data-behavior~=toggle_checked]', (event) ->
+        if $(@).is(':checked')
+          $('[type="checkbox"][name]').prop('checked', true)
+        else
+          $('[type="checkbox"][name]').prop('checked', false)
         event.preventDefault()
         return
 
@@ -839,8 +860,10 @@ $.extend feedbin,
         $(@).parents('form').submit()
 
     feedSettings: ->
-      $('[data-behavior~=sort_feeds]').change ->
-        sortBy = $(@).val()
+      $(document).on 'click', '[data-behavior~=sort_feeds]', (event, xhr) ->
+        sortBy = $(@).data('value')
+        label = $(@).text()
+        $('[data-behavior~=sort_label]').text(label)
         if sortBy == "name"
           sortFunction = feedbin.sortByName
         else if sortBy == "last-updated"
@@ -942,6 +965,32 @@ $.extend feedbin,
 
         $.post feedbin.data.mark_direction_as_read_entries, data
         return
+
+    hideUpdates: ->
+      $(document).on 'click', '[data-behavior~=hide_updates]', (event) ->
+        container = $(@).parents('.diff-wrap')
+        console.log 'hideUpdates', event
+        console.log 'feedbin.data.update_message_seen', feedbin.data.update_message_seen
+        if feedbin.data.update_message_seen
+          container.addClass('hide')
+        else
+          feedbin.data.update_message_seen = true
+          container.find('.diff-wrap-text').text('To re-enable updates, go to Setting > Feeds.')
+          setTimeout ( ->
+            container.addClass('hide')
+          ), 4000
+
+    toggle: ->
+      $(document).on 'click', '[data-toggle]', ->
+        toggle = $(@).data('toggle')
+        if toggle['class']
+          $(@).toggleClass(toggle['class'])
+        if toggle['title']
+          if toggle['title'][0] == $(@).attr('title')
+            title = toggle['title'][1]
+          else
+            title = toggle['title'][0]
+          $(@).attr('title', title)
 
     formProcessing: ->
       $(document).on 'submit', '[data-behavior~=subscription_form], [data-behavior~=search_form]', ->

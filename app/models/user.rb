@@ -4,11 +4,32 @@ class User < ActiveRecord::Base
 
   has_secure_password
 
-  store_accessor :settings, :entry_sort, :previous_read_count, :starred_feed_enabled,
-                 :hide_tagged_feeds, :precache_images, :show_unread_count, :sticky_view_inline,
-                 :mark_as_read_confirmation, :font_size, :font, :entry_width, :apple_push_notification_device_token,
-                 :mark_as_read_push_view, :keep_unread_entries, :receipt_info, :theme, :favicon_hash,
-                 :entries_display, :entries_feed, :entries_time, :entries_body, :ui_typeface
+  store_accessor :settings,
+                 :entry_sort,
+                 :previous_read_count,
+                 :starred_feed_enabled,
+                 :hide_tagged_feeds,
+                 :precache_images,
+                 :show_unread_count,
+                 :sticky_view_inline,
+                 :mark_as_read_confirmation,
+                 :font_size,
+                 :font,
+                 :entry_width,
+                 :apple_push_notification_device_token,
+                 :mark_as_read_push_view,
+                 :keep_unread_entries,
+                 :receipt_info,
+                 :theme,
+                 :favicon_hash,
+                 :entries_display,
+                 :entries_feed,
+                 :entries_time,
+                 :entries_body,
+                 :ui_typeface,
+                 :update_message_seen,
+                 :hide_recently_read,
+                 :hide_updated
 
   has_one :coupon
   has_many :subscriptions, dependent: :delete_all
@@ -48,10 +69,6 @@ class User < ActiveRecord::Base
   validate :coupon_code_valid, on: :create, if: -> user { user.coupon_code }
   validate :plan_type_valid, on: :update
   validate :trial_plan_valid
-
-  def to_param
-    email
-  end
 
   def setting_on?(setting_symbol)
     self.send(setting_symbol) == '1'
@@ -179,29 +196,6 @@ class User < ActiveRecord::Base
     logger.error "Stripe Error: " + e.message
     errors.add :base, "#{e.message}."
     CancelBilling.perform_async(customer_id)
-  end
-
-  def total_unread
-    @total_unread_count ||= unread_count.inject(0) {|sum, (feed_id, count)| sum += count}
-  end
-
-  def total_starred
-    starred_entries.count
-  end
-
-  # TODO make sure zero counts get hidden, maybe load feeds based on this list
-  def unread_count
-    @count ||= unread_entries.group(:feed_id).count
-  end
-
-  def starred_count
-    @starred_count ||= starred_entries.group(:feed_id).count
-  end
-
-  def feed_entries_count
-    ids = {}
-    feeds.pluck('feeds.id').map {|id| ids[id] = 0 }
-    ids.merge(entries.group('entries.feed_id').count)
   end
 
   def feed_with_subscription_id(feed_id)
